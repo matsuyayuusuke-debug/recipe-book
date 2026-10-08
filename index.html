@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>スクショレシピ帳</title>
+<meta name="description" content="インスタやクックパッドのスクショを保存して、改善メモを残す自分用レシピ帳">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F5F6F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="レシピ帳">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Maru+Gothic:wght@700&display=swap">
+<style>
+/* Layout: phone-first notebook. Profile header → search → category tabs → 3-col photo grid; detail and editor slide up as full sheets. */
+:root{
+  --bg:#F5F6F2; --surface:#FFFFFF; --ink:#1E2621; --muted:#6B746E; --line:#E1E4DD;
+  --accent:#2C4F7C; --accent-ink:#FFFFFF; --mustard:#B98A25; --label-bg:rgba(255,255,255,.92); --label-ink:#2A2620;
+  --improve:#B2462E; --ok:#3C7A4E; --shade:rgba(20,26,22,.45);
+  --f-display:"Zen Maru Gothic","Hiragino Maru Gothic ProN",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --f-hand:"Klee One","Hiragino Mincho ProN",serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121614; --surface:#1B201D; --ink:#E9ECE7; --muted:#9AA39C; --line:#2C332F;
+  --accent:#8FB0DC; --accent-ink:#0F1A2A; --mustard:#D9AE52; --label-bg:rgba(24,28,26,.88); --label-ink:#F0EDE6;
+  --improve:#E58A72; --ok:#7CC195; --shade:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --surface:#1B201D; --ink:#E9ECE7; --muted:#9AA39C; --line:#2C332F;
+  --accent:#8FB0DC; --accent-ink:#0F1A2A; --mustard:#D9AE52; --label-bg:rgba(24,28,26,.88); --label-ink:#F0EDE6;
+  --improve:#E58A72; --ok:#7CC195; --shade:rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+html{height:100%}
+body{min-height:100%;margin:0;padding-top:env(safe-area-inset-top,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto;padding-bottom:96px}
+
+/* profile header */
+.head{display:flex;gap:18px;align-items:center;padding:18px 16px 8px}
+.logo{flex:none;width:76px;height:76px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.logo svg{width:52px;height:52px}
+.head h1{margin:0 0 6px;font-family:var(--f-display);font-size:19px;line-height:1.3;text-wrap:balance}
+.stats{display:flex;gap:20px}
+.stats div{display:flex;flex-direction:column;line-height:1.25}
+.stats b{font-size:17px;font-variant-numeric:tabular-nums}
+.stats span{font-size:12px;color:var(--muted)}
+.bio{padding:2px 16px 10px;font-size:13px;color:var(--muted)}
+.mode{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);margin-left:6px;vertical-align:1px}
+
+.search{margin:4px 16px 10px;position:relative}
+.search input{width:100%;padding:10px 12px 10px 36px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.search svg{position:absolute;left:11px;top:50%;translate:0 -50%;width:17px;height:17px;stroke:var(--muted)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:13px;white-space:nowrap}
+.tab small{color:var(--muted);margin-left:4px;font-variant-numeric:tabular-nums}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab[aria-pressed="true"] small{color:inherit;opacity:.7}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.tile{position:relative;aspect-ratio:3/4;max-width:100%;border:0;padding:0;overflow:hidden;background:var(--line);display:block;text-align:left}
+.tile img,.tile .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.tile:active img{transform:scale(.98)}
+.lbl{position:absolute;left:0;right:0;top:9%;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:0 4px}
+.lbl i{font-style:normal;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--f-hand);font-size:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);padding-left:6px}
+.lbl b{font-family:var(--f-hand);font-weight:600;font-size:11.5px;line-height:1.3;background:var(--label-bg);color:var(--label-ink);padding:3px 7px;border-radius:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{position:absolute;right:5px;bottom:5px;font-size:10px;line-height:1;padding:4px 6px;border-radius:99px;background:var(--improve);color:#fff}
+.ph{display:grid;place-items:center;font-family:var(--f-hand);font-size:44px;color:rgba(255,255,255,.85)}
+.empty{padding:40px 24px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+
+.fab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));border:0;border-radius:99px;background:var(--accent);color:var(--accent-ink);padding:13px 20px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.22);display:flex;gap:6px;align-items:center;z-index:5}
+
+/* sheets */
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;overscroll-behavior:contain;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top,0px)) 8px 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar h2{flex:1;margin:0;font-size:15px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ib{border:0;background:none;padding:8px 10px;border-radius:8px;font-size:14px;min-width:44px}
+.ib.pri{color:var(--accent);font-weight:700}
+.inner{max-width:720px;margin:0 auto;padding:0 16px 120px}
+
+.hero{margin:0 -16px;aspect-ratio:4/3;max-width:calc(100% + 32px);background:var(--line);position:relative;overflow:hidden}
+.hero img,.hero .ph{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.hero .ph{font-size:96px}
+.dtitle{font-family:var(--f-display);font-size:24px;line-height:1.35;margin:16px 0 6px;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--muted)}
+.chip{border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:var(--surface)}
+.meta a{color:var(--accent)}
+section{margin-top:26px}
+section h3{font-family:var(--f-display);font-size:16px;margin:0 0 10px;display:flex;align-items:baseline;gap:8px}
+section h3 small{font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
+.shots{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.shots button{flex:none;width:92px;aspect-ratio:9/16;border:1px solid var(--line);border-radius:6px;padding:0;overflow:hidden;background:var(--surface)}
+.shots img{width:100%;height:100%;object-fit:cover}
+
+.ing{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.ing li{padding:10px 14px;border-top:1px dashed var(--line)}
+.ing li:first-child{border-top:0}
+.ing .row{display:flex;justify-content:space-between;gap:12px}
+.ing .amt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.memo{margin-top:4px;font-size:12.5px;color:var(--improve);display:flex;gap:6px;line-height:1.5}
+.memo::before{content:"メモ";flex:none;font-size:10px;border:1px solid currentColor;border-radius:4px;padding:0 4px;height:17px;line-height:15px;margin-top:1px}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s;display:flex;flex-direction:column;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px}
+.steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:13px;font-weight:700}
+.steps li>div{min-width:0}
+
+.log{display:flex;flex-direction:column;gap:10px}
+.entry{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--improve);border-radius:8px;padding:10px 12px}
+.entry.done{border-left-color:var(--ok)}
+.entry .eh{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted)}
+.entry .tag{font-weight:700;color:var(--improve)}
+.entry.done .tag{color:var(--ok)}
+.entry p{margin:4px 0 0;white-space:pre-wrap}
+.entry .x{border:0;background:none;color:var(--muted);font-size:11.5px;padding:0}
+.addlog{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px;font-size:13px}
+.seg button[aria-pressed="true"]{border-color:var(--improve);color:var(--improve);font-weight:700}
+.seg button.okb[aria-pressed="true"]{border-color:var(--ok);color:var(--ok)}
+.danger{margin-top:36px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:500}
+.btn.solid{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.btn.red{color:var(--improve);border-color:var(--improve)}
+.btn.redsolid{background:var(--improve);color:#fff;border-color:var(--improve)}
+
+/* editor */
+label.f{display:block;font-size:12px;color:var(--muted);margin:16px 0 6px;font-weight:500}
+.inp{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+textarea.inp{min-height:64px;resize:vertical}
+.pick{display:flex;gap:10px;align-items:stretch}
+.photo{position:relative;width:120px;aspect-ratio:3/4;flex:none;border:1.5px dashed var(--line);border-radius:10px;overflow:hidden;background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:12px;text-align:center}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo input,.addshot input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.eshots{display:flex;gap:8px;overflow-x:auto;flex:1;min-width:0}
+.eshot{position:relative;flex:none;width:68px;aspect-ratio:9/16;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.eshot img{width:100%;height:100%;object-fit:cover}
+.eshot button{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:12px;line-height:1;padding:0}
+.addshot{position:relative;flex:none;width:68px;aspect-ratio:9/16;border:1.5px dashed var(--line);border-radius:6px;display:grid;place-items:center;font-size:11px;color:var(--muted);text-align:center;background:var(--surface)}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.cats button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:13px}
+.cats button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rows{display:flex;flex-direction:column;gap:8px}
+.r{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.r .top{display:flex;gap:6px;align-items:flex-start}
+.r .top>*{min-width:0}
+.r input,.r textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);width:100%}
+.r textarea{min-height:44px;resize:vertical}
+.r .n{flex:none;width:24px;height:24px;margin-top:8px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:12px;font-weight:700}
+.r .del{flex:none;border:0;background:none;color:var(--muted);padding:8px 6px;font-size:13px}
+.r .mm{border:0;background:none;color:var(--improve);font-size:12px;padding:0;align-self:flex-start}
+.r .memoin{border-color:var(--improve)!important}
+.add{border:1.5px dashed var(--line);background:none;border-radius:10px;padding:10px;color:var(--accent);font-weight:700;width:100%}
+.ai{margin-top:10px;padding:12px;border-radius:10px;background:var(--surface);border:1px solid var(--accent);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ai p{margin:0;flex:1;min-width:180px;font-size:13px}
+.ai .st{font-size:12px;color:var(--muted);width:100%}
+.viewer{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:16px}
+.viewer img{max-height:100%;max-width:100%;object-fit:contain}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));translate:-50% 0;background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:99px;font-size:13px;z-index:30;max-width:calc(100% - 32px)}
+
+.head{align-items:flex-start}
+.menu{flex:none;border:0;background:none;color:var(--ink);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;margin-top:2px}
+.menu svg{width:20px;height:20px}
+.menu:active{background:var(--line)}
+.mode.off{border-color:var(--mustard);color:var(--mustard)}
+.kv{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.kv div{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid var(--line)}
+.kv div:first-child{border-top:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-variant-numeric:tabular-nums}
+.hint{font-size:13px;color:var(--muted);margin:10px 0 0}
+.stack{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.filebtn{position:relative;text-align:center;cursor:pointer}
+.filebtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fab{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="head">
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 52 52" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round">
+        <path d="M10 30h32M12 30c0 8 6 13 14 13s14-5 14-13"/>
+        <path d="M18 23c-1-3 1-5 0-8M26 23c-1-3 1-5 0-8M34 23c-1-3 1-5 0-8" stroke="var(--mustard)"/>
+      </svg>
+    </div>
+    <div style="min-width:0;flex:1">
+      <h1>スクショレシピ帳</h1>
+      <div class="stats">
+        <div><b id="sCount">0</b><span>レシピ</span></div>
+        <div><b id="sCats">0</b><span>カテゴリ</span></div>
+        <div><b id="sMemo">0</b><span>改善メモ</span></div>
+      </div>
+    </div>
+    <button class="menu" id="menu" aria-label="設定とバックアップ">
+      <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    </button>
+  </header>
+  <p class="bio">インスタやクックパッドのスクショを保存して、作るたびに改善メモを残す自分用レシピ帳<span class="mode" id="mode">この端末に保存</span></p>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="料理名・材料・メモで検索" aria-label="レシピを検索">
+  </div>
+  <nav class="tabs" id="tabs" aria-label="カテゴリ"></nav>
+  <main class="grid" id="grid"></main>
+  <div class="empty" id="empty" hidden></div>
+</div>
+<button class="fab" id="fab"><span style="font-size:18px;line-height:1">＋</span>レシピを登録</button>
+<div id="layer"></div>
+
+<script>
+const APP_VERSION="1.0.0";
+const CATS=[
+  {k:"meat",n:"肉料理",g:"肉",c:["#9C4A3A","#C77B58"]},
+  {k:"fish",n:"魚料理",g:"魚",c:["#2E5C7A","#5F93AE"]},
+  {k:"salad",n:"サラダ",g:"菜",c:["#4C7A3C","#8BB56A"]},
+  {k:"soup",n:"スープ",g:"汁",c:["#A8742A","#D9AE5C"]},
+  {k:"sweets",n:"スイーツ",g:"甘",c:["#A2566E","#D795A6"]},
+  {k:"rice",n:"ご飯・麺",g:"飯",c:["#7A6A4C","#B8A27A"]},
+  {k:"side",n:"副菜",g:"副",c:["#5A6E5E","#93A897"]},
+  {k:"other",n:"その他",g:"他",c:["#5E5A72","#9893AE"]},
+];
+const catOf=k=>CATS.find(c=>c.k===k)||CATS[7];
+const SOURCES=["Instagram","クックパッド","YouTube","Webサイト","本・雑誌","オリジナル"];
+
+const S={recipes:[],cat:"all",q:""};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+
+/* ---------- IndexedDB (everything stays on this device) ---------- */
+let dbp=null;
+function idb(){return dbp||(dbp=new Promise((res,rej)=>{
+  const r=indexedDB.open("screenshot-recipe-book",1);
+  r.onupgradeneeded=()=>{const d=r.result;
+    if(!d.objectStoreNames.contains("recipes"))d.createObjectStore("recipes",{keyPath:"id"});
+    if(!d.objectStoreNames.contains("images"))d.createObjectStore("images");
+    if(!d.objectStoreNames.contains("meta"))d.createObjectStore("meta")};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}))}
+async function tx(store,mode,fn){const d=await idb();return new Promise((res,rej)=>{
+  const t=d.transaction(store,mode);const req=fn(t.objectStore(store));let out;
+  if(req)req.onsuccess=()=>{out=req.result};
+  t.oncomplete=()=>res(out);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const dbAll=()=>tx("recipes","readonly",s=>s.getAll());
+const dbPut=r=>tx("recipes","readwrite",s=>s.put(r));
+const dbDel=id=>tx("recipes","readwrite",s=>s.delete(id));
+const imgGet=id=>tx("images","readonly",s=>s.get(id));
+const imgPut=(id,v)=>tx("images","readwrite",s=>s.put(v,id));
+const imgDel=id=>tx("images","readwrite",s=>s.delete(id));
+const imgCount=()=>tx("images","readonly",s=>s.count());
+const metaGet=k=>tx("meta","readonly",s=>s.get(k));
+const metaPut=(k,v)=>tx("meta","readwrite",s=>s.put(v,k));
+
+/* images are stored as {t:type, d:ArrayBuffer} and shown through object URLs */
+const URLS=new Map();
+async function urlFor(id){
+  if(!id)return "";if(URLS.has(id))return URLS.get(id);
+  const v=await imgGet(id).catch(()=>null);if(!v)return "";
+  const u=URL.createObjectURL(new Blob([v.d],{type:v.t||"image/jpeg"}));URLS.set(id,u);return u}
+function forget(id){const u=URLS.get(id);if(u){URL.revokeObjectURL(u);URLS.delete(id)}}
+const img=(id,alt="",lazy=false)=>`<img data-img="${esc(id)}" alt="${esc(alt)}"${lazy?' loading="lazy"':""}>`;
+function hydrate(root){root.querySelectorAll("img[data-img]:not([src])").forEach(async el=>{const u=await urlFor(el.dataset.img);if(u)el.src=u;else el.hidden=true})}
+async function putBlob(id,b){await imgPut(id,{t:b.type||"image/jpeg",d:await b.arrayBuffer()})}
+
+function shrink(file,max,q){return new Promise((res,rej)=>{
+  const url=URL.createObjectURL(file);const im=new Image();
+  im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement("canvas");
+    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);c.toBlob(b=>b?res(b):rej(),"image/jpeg",q)};
+  im.onerror=()=>{URL.revokeObjectURL(url);rej()};im.src=url})}
+async function storeImage(file,kind){const b=await shrink(file,kind==="shot"?1600:1200,.82);const id="img-"+uid();await putBlob(id,b);return id}
+const imagesOf=r=>[r.photo,...(r.shots||[])].filter(Boolean);
+
+async function saveRecipe(r){
+  r.updatedAt=Date.now();
+  try{await dbPut(r)}catch(e){toast(e&&e.name==="QuotaExceededError"?"端末の保存容量がいっぱいです":"保存できませんでした");return false}
+  const i=S.recipes.findIndex(x=>x.id===r.id);if(i>=0)S.recipes[i]=r;else S.recipes.unshift(r);
+  render();return true;
+}
+async function deleteRecipe(r){
+  try{await dbDel(r.id)}catch(e){toast("削除できませんでした");return}
+  for(const id of imagesOf(r)){forget(id);await imgDel(id).catch(()=>{})}
+  S.recipes=S.recipes.filter(x=>x.id!==r.id);render();
+}
+
+/* ---------- list view ---------- */
+function filtered(){
+  const q=S.q.trim().toLowerCase();
+  return S.recipes.filter(r=>{
+    if(S.cat!=="all"&&r.category!==S.cat)return false;
+    if(!q)return true;
+    const hay=[r.title,catOf(r.category).n,r.source,r.note,...(r.ingredients||[]).flatMap(i=>[i.name,i.memo]),...(r.steps||[]).flatMap(s=>[s.text,s.memo]),...(r.log||[]).map(l=>l.text)].join(" ").toLowerCase();
+    return q.split(/\s+/).every(w=>hay.includes(w));
+  }).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
+function ph(cat){const c=catOf(cat);return `<div class="ph" style="background:linear-gradient(150deg,${c.c[0]},${c.c[1]})">${c.g}</div>`}
+function setMode(){$("#mode").textContent=navigator.onLine?"この端末に保存":"オフライン中・この端末に保存";$("#mode").classList.toggle("off",!navigator.onLine)}
+function render(){
+  const all=S.recipes;
+  $("#sCount").textContent=all.length;
+  $("#sCats").textContent=new Set(all.map(r=>r.category)).size;
+  $("#sMemo").textContent=all.reduce((n,r)=>n+(r.log||[]).length,0);
+  const counts={};all.forEach(r=>counts[r.category]=(counts[r.category]||0)+1);
+  $("#tabs").innerHTML=[{k:"all",n:"すべて"},...CATS].map(c=>`<button class="tab" data-cat="${c.k}" aria-pressed="${S.cat===c.k}">${c.n}<small>${c.k==="all"?all.length:(counts[c.k]||0)}</small></button>`).join("");
+  const list=filtered();
+  $("#grid").innerHTML=list.map(r=>{
+    const c=catOf(r.category);const n=(r.log||[]).filter(l=>l.t==="improve").length;
+    return `<button class="tile" data-id="${esc(r.id)}" aria-label="${esc(r.title)}">
+      ${r.photo?img(r.photo,"",true):ph(r.category)}
+      <span class="lbl"><i>＼ ${esc(r.eyebrow||c.n)} ／</i><b>${esc(r.title||"無題")}</b></span>
+      ${n?`<span class="badge">改善 ${n}</span>`:""}
+    </button>`}).join("");
+  hydrate($("#grid"));
+  const e=$("#empty");
+  if(list.length){e.hidden=true}else{e.hidden=false;
+    e.innerHTML=all.length?`<b>見つかりませんでした</b>別のキーワードかカテゴリで探してみてください`:`<b>まだレシピがありません</b>右下の「レシピを登録」からスクショを追加しましょう`}
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(!b)return;S.cat=b.dataset.cat;render()});
+let qt;$("#q").addEventListener("input",e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value;render()},120)});
+$("#grid").addEventListener("click",e=>{const t=e.target.closest(".tile");if(t)openDetail(t.dataset.id)});
+$("#fab").addEventListener("click",()=>openEditor(null));
+$("#menu").addEventListener("click",openSettings);
+
+/* ---------- detail ---------- */
+let current=null,logType="improve";
+function openDetail(id){current=id;logType="improve";drawDetail()}
+function drawDetail(){
+  const r=S.recipes.find(x=>x.id===current);if(!r){$("#layer").innerHTML="";return}
+  const c=catOf(r.category);
+  const L=$("#layer");
+  const keepScroll=L.querySelector(".sheet:not(.ed):not(.set)")?.scrollTop||0;
+  L.innerHTML=`<div class="sheet" role="dialog" aria-label="${esc(r.title)}">
+   <div class="bar"><button class="ib" data-a="close">← 戻る</button><h2>${esc(r.title)}</h2><button class="ib pri" data-a="edit">編集</button></div>
+   <div class="inner">
+    <div class="hero">${r.photo?img(r.photo,r.title+"の完成写真"):ph(r.category)}</div>
+    <h1 class="dtitle">${esc(r.title)}</h1>
+    <div class="meta"><span class="chip">${c.n}</span>${r.servings?`<span class="chip">${esc(r.servings)}</span>`:""}${r.source?`<span class="chip">${esc(r.source)}</span>`:""}${r.url?`<a class="chip" href="${esc(r.url)}" target="_blank" rel="noopener">元の投稿を開く ↗</a>`:""}</div>
+    ${(r.shots||[]).length?`<section><h3>保存したスクショ<small>${r.shots.length}枚・タップで拡大</small></h3><div class="shots">${r.shots.map((s,i)=>`<button data-shot="${i}">${img(s,"スクショ"+(i+1))}</button>`).join("")}</div></section>`:""}
+    <section><h3>材料<small>${esc(r.servings||"")}</small></h3>
+     ${(r.ingredients||[]).length?`<ul class="ing">${r.ingredients.map(i=>`<li><div class="row"><span>${esc(i.name)}</span><span class="amt">${esc(i.amount)}</span></div>${i.memo?`<div class="memo">${esc(i.memo)}</div>`:""}</li>`).join("")}</ul>`:`<p style="color:var(--muted)">材料はまだ登録されていません</p>`}
+    </section>
+    <section><h3>作り方</h3>
+     ${(r.steps||[]).length?`<ol class="steps">${r.steps.map(s=>`<li><div>${esc(s.text)}${s.memo?`<div class="memo">${esc(s.memo)}</div>`:""}</div></li>`).join("")}</ol>`:`<p style="color:var(--muted)">手順はまだ登録されていません</p>`}
+    </section>
+    ${r.note?`<section><h3>全体メモ</h3><p style="white-space:pre-wrap;margin:0">${esc(r.note)}</p></section>`:""}
+    <section><h3>改善ノート<small>作るたびに記録</small></h3>
+     <div class="log">${(r.log||[]).length?[...r.log].reverse().map(l=>`<div class="entry ${l.t==="done"?"done":""}"><div class="eh"><span class="tag">${l.t==="done"?"試した結果":"次に改善したい"}</span><span>${esc(l.at)} · <button class="x" data-dellog="${esc(l.id||l.at+l.text)}">削除</button></span></div><p>${esc(l.text)}</p></div>`).join(""):`<p style="color:var(--muted);margin:0">まだ記録がありません。作ってみて気づいたことを残しましょう</p>`}</div>
+     <div class="addlog">
+       <div class="seg"><button data-lt="improve" aria-pressed="${logType==="improve"}">次に改善したい</button><button class="okb" data-lt="done" aria-pressed="${logType==="done"}">試した結果</button></div>
+       <textarea class="inp" id="logText" placeholder="例：塩麹を小さじ1に減らす／焼き時間10分でちょうど良い"></textarea>
+       <button class="btn solid" data-a="addlog">記録する</button></div>
+    </section>
+    <div class="danger" id="dz"><button class="btn red" data-a="askdel">このレシピを削除</button></div>
+   </div></div>`;
+  L.querySelector(".sheet").scrollTop=keepScroll;
+  hydrate(L);
+}
+$("#layer").addEventListener("click",async e=>{
+  if($("#layer .ed")||$("#layer .set"))return;
+  const t=e.target.closest("[data-a],[data-lt],[data-shot],[data-dellog]");if(!t)return;
+  const r=S.recipes.find(x=>x.id===current);if(!r)return;
+  if(t.dataset.lt){logType=t.dataset.lt;document.querySelectorAll("[data-lt]").forEach(b=>b.setAttribute("aria-pressed",b===t));return}
+  if(t.dataset.shot){const v=document.createElement("div");v.className="viewer";v.innerHTML=img(r.shots[+t.dataset.shot]);v.onclick=()=>v.remove();document.body.appendChild(v);hydrate(v);return}
+  if(t.dataset.dellog){const nr=structuredClone(r);nr.log=nr.log.filter(l=>(l.id||l.at+l.text)!==t.dataset.dellog);if(await saveRecipe(nr))drawDetail();return}
+  const a=t.dataset.a;
+  if(a==="close"){$("#layer").innerHTML="";current=null}
+  else if(a==="edit"){openEditor(r)}
+  else if(a==="addlog"){const txt=$("#logText").value.trim();if(!txt){$("#logText").focus();return}
+    const nr=structuredClone(r);nr.log=[...(nr.log||[]),{id:uid(),t:logType,text:txt,at:today()}];
+    t.disabled=true;if(await saveRecipe(nr)){toast("改善ノートに記録しました");drawDetail()}else t.disabled=false}
+  else if(a==="askdel"){$("#dz").innerHTML=`<span>本当に削除しますか？写真も消えます。</span><button class="btn redsolid" data-a="del">削除する</button><button class="btn" data-a="keep">やめる</button>`}
+  else if(a==="keep"){drawDetail()}
+  else if(a==="del"){await deleteRecipe(r);$("#layer").innerHTML="";current=null;toast("削除しました")}
+});
+
+/* ---------- editor ---------- */
+let D=null,ORIG=null,newImgs=[];
+function openEditor(r){
+  ORIG=r?structuredClone(r):null;
+  D=r?structuredClone(r):{id:"r-"+uid(),title:"",category:S.cat!=="all"?S.cat:"meat",source:"Instagram",url:"",servings:"",eyebrow:"",photo:"",shots:[],ingredients:[{name:"",amount:""}],steps:[{text:""}],note:"",log:[],createdAt:Date.now()};
+  D.shots=D.shots||[];
+  if(!D.ingredients?.length)D.ingredients=[{name:"",amount:""}];if(!D.steps?.length)D.steps=[{text:""}];
+  newImgs=[];drawEditor();
+}
+function drawEditor(){
+  const L=$("#layer");const keep=L.querySelector(".ed")?.scrollTop||0;
+  L.innerHTML=`<div class="sheet ed" role="dialog" aria-label="レシピを編集">
+   <div class="bar"><button class="ib" data-e="cancel">キャンセル</button><h2>${D.title?esc(D.title):"新しいレシピ"}</h2><button class="ib pri" data-e="save">保存</button></div>
+   <div class="inner">
+    <label class="f">完成写真 と 参考スクショ</label>
+    <div class="pick">
+      <div class="photo">${D.photo?img(D.photo):"完成写真<br>を選ぶ"}<input id="photoIn" type="file" accept="image/*" aria-label="完成写真を選ぶ"></div>
+      <div class="eshots">${D.shots.map((s,i)=>`<div class="eshot">${img(s)}<button data-rmshot="${i}" aria-label="スクショを外す">✕</button></div>`).join("")}
+        <div class="addshot">＋<br>スクショ<input id="shotIn" type="file" accept="image/*" multiple aria-label="スクショを追加"></div></div>
+    </div>
+    <label class="f" for="t">料理名</label><input class="inp" id="t" value="${esc(D.title)}" placeholder="例：なすのナムルとサラダ">
+    <label class="f" for="eb">ひとこと（グリッドの見出しに表示）</label><input class="inp" id="eb" value="${esc(D.eyebrow)}" placeholder="例：少ない油でとろとろ！">
+    <label class="f">カテゴリ</label><div class="cats">${CATS.map(c=>`<button data-setcat="${c.k}" aria-pressed="${D.category===c.k}">${c.n}</button>`).join("")}</div>
+    <div class="two"><div><label class="f" for="src">出典</label><select class="inp" id="src">${SOURCES.map(s=>`<option ${D.source===s?"selected":""}>${s}</option>`).join("")}</select></div>
+      <div><label class="f" for="sv">分量</label><input class="inp" id="sv" value="${esc(D.servings)}" placeholder="2人分"></div></div>
+    <label class="f" for="url">元の投稿URL（任意）</label><input class="inp" id="url" type="url" value="${esc(D.url)}" placeholder="https://www.instagram.com/p/…">
+
+    <label class="f">材料　<span style="color:var(--improve)">メモ</span>で代用・分量調整などを記録</label>
+    <div class="rows" id="ings">${D.ingredients.map((i,k)=>`<div class="r"><div class="top"><input data-ing="${k}" data-f="name" value="${esc(i.name)}" placeholder="材料" style="flex:1.4"><input data-ing="${k}" data-f="amount" value="${esc(i.amount)}" placeholder="分量" style="flex:1"><button class="del" data-rming="${k}" aria-label="材料を削除">✕</button></div>
+      ${i.memo!==undefined?`<input class="memoin" data-ing="${k}" data-f="memo" value="${esc(i.memo)}" placeholder="メモ：例）ごま油を半量にしても美味しい">`:`<button class="mm" data-addmemo="ing:${k}">＋ メモ</button>`}</div>`).join("")}</div>
+    <button class="add" data-e="addIng" style="margin-top:8px">＋ 材料を追加</button>
+
+    <label class="f">作り方</label>
+    <div class="rows" id="steps">${D.steps.map((s,k)=>`<div class="r"><div class="top"><span class="n">${k+1}</span><textarea data-st="${k}" data-f="text" placeholder="手順" style="flex:1">${esc(s.text)}</textarea><button class="del" data-rmst="${k}" aria-label="手順を削除">✕</button></div>
+      ${s.memo!==undefined?`<textarea class="memoin" data-st="${k}" data-f="memo" placeholder="メモ：例）焦げやすいので弱めの中火で">${esc(s.memo)}</textarea>`:`<button class="mm" data-addmemo="st:${k}">＋ メモ</button>`}</div>`).join("")}</div>
+    <button class="add" data-e="addSt" style="margin-top:8px">＋ 手順を追加</button>
+
+    <label class="f" for="note">全体メモ</label><textarea class="inp" id="note" placeholder="味の感想、家族の反応、合わせた献立など">${esc(D.note)}</textarea>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px">作ったあとの「次に改善したい」はレシピ画面の改善ノートに日付つきで残せます。</p>
+    <button class="btn solid" data-e="save" style="width:100%;margin-top:8px">保存する</button>
+   </div></div>`;
+  L.querySelector(".ed").scrollTop=keep;
+  hydrate(L);
+}
+function pull(){
+  const L=$("#layer");if(!L.querySelector(".ed"))return;
+  D.title=$("#t").value.trim();D.eyebrow=$("#eb").value.trim();D.source=$("#src").value;D.servings=$("#sv").value.trim();D.url=$("#url").value.trim();D.note=$("#note").value;
+  L.querySelectorAll("[data-ing]").forEach(el=>{D.ingredients[+el.dataset.ing][el.dataset.f]=el.value});
+  L.querySelectorAll("[data-st]").forEach(el=>{D.steps[+el.dataset.st][el.dataset.f]=el.value});
+}
+async function dropImages(ids){for(const id of ids){forget(id);await imgDel(id).catch(()=>{})}}
+$("#layer").addEventListener("click",async e=>{
+  if(!$("#layer .ed"))return;
+  const t=e.target.closest("[data-e],[data-setcat],[data-rming],[data-rmst],[data-addmemo],[data-rmshot]");if(!t)return;
+  pull();
+  if(t.dataset.setcat){D.category=t.dataset.setcat;drawEditor();return}
+  if(t.dataset.rming){D.ingredients.splice(+t.dataset.rming,1);if(!D.ingredients.length)D.ingredients=[{name:"",amount:""}];drawEditor();return}
+  if(t.dataset.rmst){D.steps.splice(+t.dataset.rmst,1);if(!D.steps.length)D.steps=[{text:""}];drawEditor();return}
+  if(t.dataset.rmshot){D.shots.splice(+t.dataset.rmshot,1);drawEditor();return}
+  if(t.dataset.addmemo){const[k,i]=t.dataset.addmemo.split(":");(k==="ing"?D.ingredients:D.steps)[+i].memo="";drawEditor();
+    const el=$(`#layer [data-${k==="ing"?"ing":"st"}="${i}"][data-f="memo"]`);el&&el.focus();return}
+  const a=t.dataset.e;
+  if(a==="addIng"){D.ingredients.push({name:"",amount:""});drawEditor();const ins=$("#layer").querySelectorAll('[data-f="name"]');ins[ins.length-1].focus()}
+  else if(a==="addSt"){D.steps.push({text:""});drawEditor();const ins=$("#layer").querySelectorAll('[data-st][data-f="text"]');ins[ins.length-1].focus()}
+  else if(a==="cancel"){await dropImages(newImgs);newImgs=[];$("#layer").innerHTML="";if(current&&S.recipes.find(x=>x.id===current))drawDetail()}
+  else if(a==="save"){
+    if(!D.title){toast("料理名を入れてください");$("#t").focus();return}
+    D.ingredients=D.ingredients.filter(i=>i.name.trim()||i.amount.trim()).map(i=>{const o={name:i.name.trim(),amount:i.amount.trim()};if(i.memo&&i.memo.trim())o.memo=i.memo.trim();return o});
+    D.steps=D.steps.filter(s=>s.text.trim()).map(s=>{const o={text:s.text.trim()};if(s.memo&&s.memo.trim())o.memo=s.memo.trim();return o});
+    t.disabled=true;
+    if(await saveRecipe(D)){
+      const keepIds=new Set(imagesOf(D));
+      await dropImages([...(ORIG?imagesOf(ORIG):[]),...newImgs].filter(id=>!keepIds.has(id)));
+      newImgs=[];current=D.id;toast("保存しました");drawDetail();
+    }else t.disabled=false;
+  }
+});
+$("#layer").addEventListener("change",async e=>{
+  if(e.target.id==="importIn"){importBackup(e.target.files[0]);e.target.value="";return}
+  if(e.target.id!=="photoIn"&&e.target.id!=="shotIn")return;
+  pull();const files=[...e.target.files];if(!files.length)return;
+  toast("写真を取り込んでいます…");
+  try{
+    if(e.target.id==="photoIn"){const id=await storeImage(files[0],"photo");newImgs.push(id);D.photo=id}
+    else for(const f of files){const id=await storeImage(f,"shot");newImgs.push(id);D.shots.push(id)}
+    drawEditor();
+  }catch(err){toast("画像を読み込めませんでした")}
+});
+
+/* ---------- settings & backup ---------- */
+const isStandalone=()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+async function openSettings(){
+  const L=$("#layer");
+  const n=S.recipes.length;const ni=await imgCount().catch(()=>0);
+  let used="";try{const est=await navigator.storage?.estimate?.();if(est&&est.usage)used=(est.usage/1048576).toFixed(1)+" MB"}catch(e){}
+  const last=await metaGet("lastBackup").catch(()=>null);
+  L.innerHTML=`<div class="sheet set" role="dialog" aria-label="設定とバックアップ">
+   <div class="bar"><button class="ib" data-s="close">← 戻る</button><h2>設定とバックアップ</h2><span class="ib"></span></div>
+   <div class="inner">
+    <section><h3>保存状況</h3>
+     <dl class="kv"><div><dt>レシピ</dt><dd>${n}件</dd></div><div><dt>写真</dt><dd>${ni}枚</dd></div>${used?`<div><dt>使用容量</dt><dd>${used}</dd></div>`:""}<div><dt>最後のバックアップ</dt><dd>${last?esc(last):"まだありません"}</dd></div></dl>
+     <p class="hint">レシピと写真はこの端末の中だけに保存されています。ネットにつながっていなくても使えます。</p>
+    </section>
+    <section><h3>バックアップ</h3>
+     <p class="hint">機種変更やアプリを消したときのために、ときどき書き出して「ファイル」アプリやiCloud Driveに保存しておきましょう。</p>
+     <div class="stack">
+      <button class="btn solid" data-s="export">バックアップを書き出す</button>
+      <label class="btn filebtn">バックアップから読み込む<input id="importIn" type="file" accept="application/json,.json"></label>
+     </div>
+     <p class="hint">読み込むと、同じレシピは上書きされ、新しいレシピは追加されます。</p>
+    </section>
+    ${isStandalone()?"":`<section><h3>ホーム画面に追加</h3><p class="hint">Safariの共有ボタン → 「ホーム画面に追加」で、アプリとしてオフラインでも開けるようになります。データはホーム画面のアプリ側に保存されるので、追加後はアイコンから開いて使ってください。</p></section>`}
+    <p class="hint" style="margin-top:28px">バージョン ${APP_VERSION}</p>
+   </div></div>`;
+}
+$("#layer").addEventListener("click",async e=>{
+  if(!$("#layer .set"))return;
+  const t=e.target.closest("[data-s]");if(!t)return;
+  if(t.dataset.s==="close"){$("#layer").innerHTML=""}
+  else if(t.dataset.s==="export"){t.disabled=true;try{await exportBackup()}finally{t.disabled=false}}
+});
+const blobToData=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function exportBackup(){
+  const recipes=await dbAll();const images={};
+  for(const r of recipes)for(const id of imagesOf(r)){if(images[id])continue;const v=await imgGet(id);if(v)images[id]=await blobToData(new Blob([v.d],{type:v.t||"image/jpeg"}))}
+  const name=`recipe-backup-${today()}.json`;
+  const file=new File([JSON.stringify({app:"screenshot-recipe-book",version:1,exportedAt:new Date().toISOString(),recipes,images})],name,{type:"application/json"});
+  let done=false;
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:"レシピ帳のバックアップ"});done=true}catch(e){if(e&&e.name==="AbortError")return}
+  }
+  if(!done){const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}
+  await metaPut("lastBackup",today()).catch(()=>{});
+  toast(`${recipes.length}件を書き出しました`);
+  if($("#layer .set"))openSettings();
+}
+async function importBackup(file){
+  if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!data||!Array.isArray(data.recipes))throw new Error("format");
+    for(const [id,du] of Object.entries(data.images||{})){const b=await (await fetch(du)).blob();await putBlob(id,b);forget(id)}
+    let n=0;for(const r of data.recipes){if(r&&r.id&&r.title){await dbPut(r);n++}}
+    S.recipes=await dbAll();render();toast(`${n}件を読み込みました`);openSettings();
+  }catch(e){toast("このファイルは読み込めません。レシピ帳のバックアップを選んでください")}
+}
+
+/* ---------- boot ---------- */
+async function seedIfNeeded(){
+  if(await metaGet("seeded"))return;
+  try{
+    const data=await (await fetch("seed/recipes.json")).json();
+    for(const r of data.recipes){
+      for(const id of imagesOf(r)){const res=await fetch("seed/img/"+id+".jpg");if(res.ok)await putBlob(id,await res.blob())}
+      await dbPut(r);
+    }
+    await metaPut("seeded",true);
+  }catch(e){console.warn("seed skipped",e)}
+}
+(async()=>{
+  setMode();addEventListener("online",setMode);addEventListener("offline",setMode);
+  try{await seedIfNeeded();S.recipes=await dbAll()}catch(e){toast("データを読み込めませんでした。プライベートブラウズでは保存できません")}
+  render();
+  try{navigator.storage?.persist?.()}catch(e){}
+})();
+if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+</script>
+
+</body>
+</html>

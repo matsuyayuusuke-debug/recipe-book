@@ -1,0 +1,186 @@
+{
+ "recipes": [
+  {
+   "category": "salad",
+   "createdAt": 1791384060000,
+   "eyebrow": "10分でバリ旨！",
+   "ingredients": [
+    {
+     "amount": "2個(260g)",
+     "name": "じゃがいも"
+    },
+    {
+     "amount": "60g",
+     "name": "ベーコン"
+    },
+    {
+     "amount": "3個",
+     "name": "ゆでたまご"
+    },
+    {
+     "amount": "大さじ2〜2と1/2",
+     "name": "A マヨネーズ"
+    },
+    {
+     "amount": "小さじ1",
+     "name": "A コンソメ(顆粒)"
+    },
+    {
+     "amount": "小さじ1/2",
+     "name": "A しょうゆ"
+    },
+    {
+     "amount": "5cm",
+     "name": "A にんにく(チューブ)"
+    },
+    {
+     "amount": "少々",
+     "name": "粗挽き黒こしょう"
+    },
+    {
+     "amount": "小さじ1/2",
+     "name": "オリーブオイル"
+    }
+   ],
+   "log": [],
+   "note": "調理時間10分。投稿者：@mikana___m",
+   "photo": "seed-potato_photo",
+   "servings": "3人分",
+   "shots": [
+    "seed-potato_shot1",
+    "seed-potato_shot2"
+   ],
+   "source": "Instagram",
+   "steps": [
+    {
+     "text": "下準備：じゃがいも(新じゃがでも可)は皮を剥き、一口大に切る。ベーコンは1cm幅に切る。【A】を混ぜ合わせておく。"
+    },
+    {
+     "text": "フライパンにオリーブオイルを引き、中火でベーコンを炒める。その間に、じゃがいもを耐熱容器に入れてラップをし、電子レンジ(600W)で5分加熱する(竹串がスッと通るまで)。ラップを外し、さらに30秒ほど加熱して水分を飛ばす。"
+    },
+    {
+     "text": "じゃがいもは温かいうちに粗くつぶし、炒めたベーコンを油ごと入れる。粗熱をとる。"
+    },
+    {
+     "text": "②に【A】を加え、混ぜ合わせる。"
+    },
+    {
+     "text": "ゆでたまごを粗く割って軽く混ぜ合わせる。器に盛り付け、粗挽き黒こしょうをふる。"
+    }
+   ],
+   "title": "コンソメパンチ風ポテトサラダ",
+   "updatedAt": 1791384060000,
+   "url": "",
+   "id": "potato-consomme"
+  },
+  {
+   "category": "other",
+   "createdAt": 1791384061000,
+   "eyebrow": "焼いてる匂いで飲める",
+   "ingredients": [
+    {
+     "amount": "200g",
+     "name": "有塩バター"
+    },
+    {
+     "amount": "20g",
+     "memo": "量はお好みで調整",
+     "name": "フレッシュパセリ"
+    },
+    {
+     "amount": "6片",
+     "memo": "量はお好みで調整",
+     "name": "にんにく"
+    }
+   ],
+   "log": [],
+   "note": "パンに塗って焼くとガーリックトーストに。冷凍ストックしておけばキャンプにも持っていける。投稿者：@tuki_reitou.otumami",
+   "photo": "seed-garlic_photo",
+   "servings": "棒状1本分",
+   "shots": [
+    "seed-garlic_shot1",
+    "seed-garlic_shot2"
+   ],
+   "source": "Instagram",
+   "steps": [
+    {
+     "text": "バターは常温に戻して薄くスライスする。パセリとにんにくをみじん切りにして、バターとよく混ぜ合わせる。"
+    },
+    {
+     "text": "クッキングシートに①をのせて、棒状に形を整える。"
+    },
+    {
+     "memo": "冷凍で約1か月保存OK",
+     "text": "冷凍庫で保存する。使いたい分だけ切って使う。"
+    }
+   ],
+   "title": "にんにくバター",
+   "updatedAt": 1791384061000,
+   "url": "",
+   "id": "garlic-butter"
+  },
+  {
+   "category": "fish",
+   "createdAt": 1791385320000,
+   "eyebrow": "白ワインに合うおつまみ",
+   "ingredients": [
+    {
+     "amount": "2パック",
+     "name": "たこ（刺身用）"
+    },
+    {
+     "amount": "5枚",
+     "name": "大葉"
+    },
+    {
+     "amount": "3〜4片ぐらい",
+     "name": "にんにく"
+    },
+    {
+     "amount": "小さじ2",
+     "name": "鶏ガラ"
+    },
+    {
+     "amount": "大さじ1",
+     "name": "醤油"
+    },
+    {
+     "amount": "小さじ1",
+     "name": "ミックスハーブ"
+    },
+    {
+     "amount": "適量",
+     "name": "粉チーズ"
+    },
+    {
+     "amount": "大さじ4",
+     "name": "ごま油"
+    }
+   ],
+   "log": [],
+   "note": "ペアリング：樽香とコクのあるしっかりめの白ワインが合う。冷えた辛口ロゼやスパークリングも◎。\n投稿者：@naito_otsumami",
+   "photo": "seed-tako_photo",
+   "servings": "2人前",
+   "shots": [
+    "seed-tako_shot1",
+    "seed-tako_shot2"
+   ],
+   "source": "Instagram",
+   "steps": [
+    {
+     "text": "タコをぶつ切りにし、大葉とにんにくをみじん切りにする。"
+    },
+    {
+     "text": "タコと大葉を耐熱ボウルに移す。フライパンにごま油をしいてにんにくを入れ、加熱する。"
+    },
+    {
+     "text": "タコと大葉にガーリックオイルをかけ、調味料をふって混ぜたら完成。"
+    }
+   ],
+   "title": "タコガーリック",
+   "updatedAt": 1791385320000,
+   "url": "",
+   "id": "tako-garlic"
+  }
+ ]
+}
